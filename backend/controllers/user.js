@@ -215,6 +215,12 @@ exports.deleteMyProfile = async (req, res) => {
     const followers = user.followers;
     const following = user.following;
     const userId = user._id;
+    
+    // removing avatar from cloudinary
+    await cloudinary.v2.uploader.destroy(user.avatar.public_id);
+
+
+
     await user.deleteOne();
 
     // logout the user
@@ -226,11 +232,12 @@ exports.deleteMyProfile = async (req, res) => {
     //deleting all the post of the user
     for (let i = 0; i < posts.length; i++) {
       const post = await Post.findById(posts[i]);
+      await cloudinary.v2.uploader.destroy(post.image.public_id);
       await post.deleteOne();
     }
 
     // Removing users from followers following
-    for (let i = 0; i < array.length; i++) {
+    for (let i = 0; i < followers.length; i++) {
       const follower = await User.findById(followers[i]);
 
       const index = follower.following.indexOf(userId);
@@ -239,7 +246,7 @@ exports.deleteMyProfile = async (req, res) => {
     }
 
     // Removing users from following's followers
-    for (let i = 0; i < array.length; i++) {
+    for (let i = 0; i < following.length; i++) {
       const follows = await User.findById(following[i]);
 
       const index = follows.followers.indexOf(userId);
@@ -324,7 +331,7 @@ exports.forgotPassword = async (req, res) => {
 
     const resetUrl = `${req.protocol}://${req.get(
       "host"
-    )}/api/v1/password/reset/${resetPasswordToken}`;
+    )}/password/reset/${resetPasswordToken}`;
 
     const message = `Reset you Password by cicking on the link below: \n\n ${resetUrl}`;
 
